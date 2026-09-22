@@ -1,101 +1,250 @@
-# iBuyer pricing: valuation, causal price effects, and margin optimization
+# Home valuation and causal pricing lab
 
-A self-contained simulation lab for the question *"walk me through (1) the valuation model and (2) how you think about
-the causal component"* in an iBuyer setting (Offerpad-style: instant cash offers to sellers, resale to buyers).
+A reproducible technical study of **home valuation**, **causal price response**,
+and **inventory profit optimization**, motivated by questions about Opendoor.
+All executable examples use newly generated synthetic data. This is not
+Opendoor's production model, proprietary data, or financial advice.
 
-The simulator plants a **known** causal structure — unobserved home condition, analyst discretion, seller
-self-appreciation, adverse selection, local demand shocks — so every estimator and every pricing decision can be scored
-against the truth.
+The main deliverable is an interactive Streamlit demo of how causal inference
+supports decisions on both sides of an iBuyer marketplace:
 
-| What you get | Where |
+- **Acquisition:** valuation uncertainty, homeowner response, offer acceptance,
+  adverse selection, and offer policy.
+- **Resale:** buyer response, markdown effects, completion probability,
+  contribution profit, inventory risk, and price policy.
+
+Start with the [concise technical summary](docs/design_implementation_summary.pdf),
+then launch the app. The [complete PDF handbook](docs/design_implementation_report.pdf)
+retains the detailed design, theory, implementation, and worked examples.
+
+| Read | Purpose |
 |---|---|
-| OVM-style valuation model with prediction intervals | `offerpad_simulator/valuation.py` |
-| Funnel simulator with ground truth (offers → acceptance → resale) | `offerpad_simulator/simulate.py`, `offerpad_simulator/config.py` |
-| Naive vs DML vs IV (experiment, analyst leniency, rollout RD, an *invalid* IV) vs control function; HTE | `offerpad_simulator/causal.py` |
-| Seller self-appreciation & adverse selection | `offerpad_simulator/seller_psych.py` |
-| Margin optimization: spread, list price, 3% worked example, volume constraint, uncertainty | `offerpad_simulator/optimize.py` |
-| Figures + auto-generated report | `outputs/figures/`, `outputs/results.md` |
-| Theory write-up and interview answer script | `docs/THEORY.md`, `docs/INTERVIEW_GUIDE.md` |
-| Interactive walkthrough | `notebooks/walkthrough.ipynb` |
+| [Concise technical summary](docs/design_implementation_summary.pdf) | Shareable overview of the two-sided valuation and causal decision system |
+| [Complete PDF handbook](docs/design_implementation_report.pdf) | Printable, navigable collection of the design, theory, implementation, results, and sources |
+| [Design and implementation guide](docs/design_implementation_guide.md) | Architecture, module map, execution walkthrough, rationale, and extension boundaries |
+| [Analysis report](docs/analysis_report.md) | Detailed theory and economic reasoning |
+| [Generated reference results](docs/reference_results.md) | Actual numbers from the seeded Python pipeline |
+| [Source ledger](docs/sources.md) | Public sources, supported claims, and verification limits |
+| [Data dictionary](docs/data_dictionary.md) | Units, timestamps, labels, costs, and feature restrictions |
+| [Linked two-sided extension](docs/two_sided_extension.md) | End-to-end stage timing, selection-aware continuation learning, and sequential policy evaluation |
+| [Generated two-sided results](docs/two_sided_results.md) | Separate linked-cohort results, including uncertainty and unchanged recommendations |
 
-## Quickstart
+## What the study does
 
-```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python run_all.py            # ~1 min: simulate, estimate, optimize, write outputs/results.md + figures
-python run_all.py --quick    # smaller sample
-pytest -q                    # checks that causal estimators recover the planted truth
+The main experiment compares **holding the current resale list price** with a
+**3% price cut**, among homes still unsold at a specified decision time. Its
+outcome is a completed sale over the next 30 days. A separate acquisition
+example models homeowner beliefs, reservation utility, final-offer acceptance,
+completed acquisitions, and selection into the purchased pool.
+
+The reference simulation estimates a roughly **8.95 percentage-point** resale
+completion lift using randomized, cross-fitted AIPW. For one illustrated home,
+a 3% cut increases predicted completion from about **17.86% to 25.93%**, yet
+reduces expected contribution from about **$32,358 to $30,559**. These are
+synthetic results, not estimates of any company's real price elasticity.
+
+An **additive linked extension** follows the same prospect from initial offer
+through selective escalation, completed acquisition, listing, markdown, and
+disposition. Three chronological cohorts separate response development,
+downstream-reward learning, and final evaluation. The seed-42 selective rule
+holds all acquisition offers; its policy interval does not establish a gain.
+That unfavorable result is retained, not tuned away. PDF Parts IX-X cover
+this extension without replacing the original experiment.
+
+![Synthetic price response and profit](docs/figures/response_and_profit.png)
+
+## Project structure
+
+| Path | Purpose |
+|---|---|
+| `src/home_valuation/` | Simulation, valuation, causal estimation, policy evaluation, and optimization |
+| `app/streamlit_app.py` | Interactive visual demo for acquisition and resale decisions |
+| `examples/` | Small executable walkthroughs of each modeling stage |
+| `tests/` | Leakage, causal identification, economics, policy, app, and report checks |
+| `docs/` | Public design, results, sources, figures, and PDF reports |
+| `scripts/build_pdf_report.py` | Reproducible report builder |
+
+## Install on Windows
+
+Use Python 3.11 and run commands from this project directory. No activation
+script or real-data access is required.
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install --no-deps -e .
 ```
 
-## The causal structure being simulated
+The lockfile records the tested Windows/Python 3.11 environment, including
+demo and development dependencies. For a fresh environment using the
+compatible version ranges instead, use:
 
-```mermaid
-flowchart LR
-  X[Observed features X] --> V[True value V]
-  U[Unobserved condition U] --> V
-  U --> An[Analyst adjustment]
-  An --> S[Spread]
-  Zexp[Randomized spread arm] --> S
-  Zjud[Analyst leniency] --> S
-  V2[Algorithm v2 cutover] --> S
-  Rate[Mortgage-rate shifter] --> S
-  Rate -. violates exclusion .-> R
-  V --> R["Seller reservation (self-appreciation)"]
-  S --> O[Offer] --> A[Accept]
-  R --> A
-  A --> L[List price] --> D[Days on market] --> M[Contribution margin]
-  U --> L
-  H[Local demand heat] --> L
-  H --> D
-  Zl[Randomized list arm] --> L
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[demo,dev]"
 ```
 
-## Headline results (seed 7, 60k offers)
+The modeling package itself does not require Streamlit; `pip install -e .`
+is sufficient for the CLI and examples. The complete test suite includes
+the app and therefore needs both extras. Native numerical threads are bounded
+in the main study and AVM fitting to avoid excessive CPU oversubscription.
 
-Portfolio at current policy: acceptance 23%, gross margin 8.0%, contribution margin 3.6%, median DOM 35 days.
+## Launch the interactive demo
 
-**Effect of +1pp spread on offer acceptance (pp)** — truth **−3.04**
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app\streamlit_app.py
+```
 
-| Naive OLS | DML (X only) | 2SLS: randomized arm | 2SLS: analyst leniency | 2SLS: v2 rollout | 2SLS: mortgage rate (invalid) | Control-function logit |
-|---|---|---|---|---|---|---|
-| −0.27 | −0.86 | **−3.01** | −2.74 | −1.92 ± 1.18 | +3.38 (flagged by over-ID test, p = 0.004) | −2.82 |
+Open **http://127.0.0.1:8501**. The checked-in configuration binds the app to
+localhost and disables Streamlit usage telemetry. Stop it with `Ctrl+C`.
 
-**Pricing decisions** (optimum chosen by each model, scored on the truth)
+## Read or rebuild the PDF reports
 
-| | truth | causal model | naive model |
-|---|---|---|---|
-| Spread change vs current | +3.0pp | +3.0pp | +6pp (grid edge) — loses 8% of contribution |
-| List-price multiplier | 1.025 | 1.015 | 1.08 (grid edge) — loses 26% per home |
+`docs\design_implementation_summary.pdf` is the concise, standalone overview;
+its maintained source is `docs\design_implementation_summary.md`.
 
-**3% list-price cut** (per bought home, truth): P(sold ≤ 60d) 72% → 84%, E[DOM] 53 → 37 days,
-contribution −$3.4k. The causal model predicts +12.5pp and −$3.3k; the naive model predicts no change in speed.
+Open `docs\design_implementation_report.pdf`; no software installation is
+needed to read it. It includes equations, six synthetic result figures,
+bookmarks, a table of contents, and reference tables split into readable
+column panels.
 
-**Self-appreciation:** sellers' stated value = OVM × (1 + 2.9% + 0.62 × trailing market HPA); accepted homes were
-over-valued by the OVM by 2.6% on average (adverse selection).
+To rebuild it from the maintained public Markdown and figures:
 
-![confounding](outputs/figures/fig02_confounding.png)
-![estimators](outputs/figures/fig03_seller_estimators.png)
-![seller optimization](outputs/figures/fig07_seller_optimization.png)
-![buyer optimization](outputs/figures/fig08_buyer_3pct_cut.png)
-![self appreciation](outputs/figures/fig06_self_appreciation.png)
-![frontier](outputs/figures/fig09_margin_volume_frontier.png)
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e ".[report]"
+.\.venv\Scripts\python.exe scripts\build_pdf_report.py --date 2026-09-21
 
-Full tables and every figure: [`outputs/results.md`](outputs/results.md).
+# Build only the concise summary, leaving the full handbook unchanged.
+.\.venv\Scripts\python.exe scripts\build_pdf_report.py --summary --date 2026-09-21
+```
 
-## Experiments to try
+The optional report extra supplies Pandoc, Typst, and PyMuPDF. It is separate
+from the demo/development lockfile and is not needed for modeling or the app.
+The builder runs locally without fetching web content, records source hashes
+and tool versions in `outputs\pdf_report\manifest.json`, and checks the PDF
+before replacing the published copy. Temporary build files remain ignored.
+The summary uses its own output file and `outputs\pdf_summary\manifest.json`.
 
-Edit `offerpad_simulator/config.py` (or pass a `SimConfig(...)`) and re-run:
+Rebuilding the PDF **does not rerun the simulation**. After changing a model,
+first regenerate the affected study, reconcile the narrative's seed-42
+numbers, then rebuild. Omitting `--date` uses today's snapshot date; the date
+is not a claim that public sources were reverified that day.
 
-* `analyst_soft_info=0` — remove the confounding path; the naive estimate converges to the truth.
-* `rate_on_reservation=0` — the mortgage-rate instrument becomes valid.
-* `self_apprec_hpa_passthrough=1.0` — hotter markets convert even less; watch acceptance by market.
-* `beta_condition=0.06` — more private information → stronger adverse selection → wider optimal spread.
-* `holding_cost_per_day=0.0004` — costlier inventory → the optimal list price falls (1.025 → 1.01) and the cost of a 3% cut shrinks (−$3.4k → −$2.5k).
-* `experiment_share=0.05` — a smaller test: see how much the IV confidence interval widens.
+## Generate datasets and reproduce the report
 
-## Notes
+```powershell
+# Quick run: same models, smaller data, no resampling loops.
+.\.venv\Scripts\python.exe -m home_valuation pipeline --size 1000 --bootstrap 0 --monte-carlo 0 --output outputs\smoke
 
-* All data are synthetic. Parameters are chosen to be plausible, not to describe any company's actual numbers.
-* Randomized price tests are treated as available at modest scale; the code shows what each quasi-experimental
-  alternative buys you when they are not.
+# Reference run: default table sizes, seed 42, uncertainty and IV repetitions.
+.\.venv\Scripts\python.exe -m home_valuation pipeline --seed 42 --bootstrap 30 --monte-carlo 30 --write-report --output outputs\reference
+```
+
+The reference run creates 5,000 market sales, 4,000 homeowner offers, 6,000
+eligible resale decisions per assignment design, and 8,000 observations per
+main IV fixture. It writes CSVs, metadata, hashes, evaluator-only truth,
+result tables, and figures under `outputs\reference`.
+`--write-report` also refreshes `docs\reference_results.md` and `docs\figures`.
+It does not overwrite the narrative analysis or source ledger.
+
+Runs with different seeds or sizes will produce different estimates. The
+narrative's numeric examples refer to the documented seed-42 reference run.
+Thirty bootstrap/Monte Carlo repetitions are intentionally modest teaching
+settings, not production-quality tail inference. Longer runs can increase
+both flags without changing the generator or selecting favorable seeds.
+
+## Run the eight walkthroughs
+
+Run the reference pipeline first; the scripts read its generated CSV files.
+
+```powershell
+.\.venv\Scripts\python.exe examples\01_eda.py
+.\.venv\Scripts\python.exe examples\02_features_and_valuation.py
+.\.venv\Scripts\python.exe examples\03_homeowner_valuation.py
+.\.venv\Scripts\python.exe examples\04_causal_price_response.py
+.\.venv\Scripts\python.exe examples\05_instrumental_variables.py
+.\.venv\Scripts\python.exe examples\06_profit_optimization.py
+.\.venv\Scripts\python.exe examples\07_stress_and_policy_validation.py
+.\.venv\Scripts\python.exe examples\08_design_diagnostics.py
+```
+
+These are readable Python entrypoints, not eight independent implementations.
+The shared package lives in `src\home_valuation`. Start with EDA, then
+valuation, homeowner decisions, causal response, instruments, optimization,
+then stress/offline policy evaluation and the new instrument/portfolio diagnostics.
+
+The comparison-driven upgrade adds conditional IV exclusion sensitivity,
+observed assignment checks, paired policy contrasts, and a supported-price
+portfolio completion frontier. A fractional optimizer result is a lottery
+over tested prices, not an unsupported average price.
+
+## Run the linked two-sided extension and ninth walkthrough
+
+```powershell
+.\.venv\Scripts\python.exe -m home_valuation two-sided --seed 42 --write-report
+.\.venv\Scripts\python.exe examples\09_linked_two_sided.py
+```
+
+This separate command defaults to `outputs\two_sided`, with 5,000 historical
+transactions and 12,000/10,000/8,000 prospects in development, continuation,
+and evaluation cohorts. It writes linked datasets, stage effects, candidate
+values, chosen-action gains, and sequential DR policy comparisons.
+`--write-report` updates only `docs\two_sided_results.md` and its figure.
+For a small run, use `--size 2400 --output outputs\two_sided_smoke`.
+Bootstrap/Monte Carlo flags apply only to the original `pipeline` command.
+
+The [extension chapter](docs/two_sided_extension.md) explains why randomized
+full-delivery actions need no new IV, how downstream policy rewards feed
+acquisition, and why a greater closing probability need not justify escalation.
+
+## Explore the interactive demo
+
+The eight sections show data, valuation errors, homeowner profiles, causal
+estimates, valid and invalid IV designs, price/profit curves, and assumptions.
+In **Profit optimization**, change the home, objective, terminal-value
+assumption, holding costs, or price floor. An impossible floor produces an
+explicit abstention rather than an invented feasible price.
+The instrument and profit sections also expose the new diagnostics and
+portfolio frontier. That frontier uses the study's fixed holdout portfolio and
+reference economics; it does not change with the individual-home stress sliders.
+**Two-sided extension** adds linked funnels, stage effects, candidate acquisition
+values, chosen actions, and joint policy uncertainty using the same package.
+
+The app defaults to 3,000 observations per table and omits resampling loops
+for responsiveness. It therefore does **not** reproduce the full reference
+run's exact numbers. The CLI-generated report includes bootstrap summaries;
+the app displays the same core estimators, economic stresses, and policy
+comparisons at its selected configuration.
+The linked section uses `max(3600, 2 * selected size)` prospects per cohort,
+not the default extension CLI cohort sizes; its configuration is displayed.
+
+## Checks
+
+```powershell
+.\.venv\Scripts\python.exe -m ruff check src examples app tests scripts
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+Tests cover temporal leakage, oracle separation, treatment units, outcome
+maturity, cost accounting, support, infeasibility, IV confidence-set inversion,
+selection derivatives, stress-policy choices, deterministic simulation, and
+application navigation, plus portfolio feasibility/shadow prices, stochastic
+policy scores, paired differences, and exclusion sensitivity. With the report
+extra installed, additional checks cover PDF source assembly, table panels,
+and internal links. The GitHub Actions workflow repeats the core checks and compact runs of both
+experiments on Windows; it does not require the optional
+PDF toolchain. Linked-stage checks include sequential-score algebra, actual
+chosen-gain hurdles, whole-cohort accounting, and downstream-policy linkage.
+
+## Privacy and scope
+
+The repository contains the maintained package, app, examples, tests, build
+scripts, public documentation, and selected synthetic figures. Virtual
+environments, caches, generated `outputs`, raw data, private reference
+material, notebooks, and comparison-only implementations are excluded by
+`.gitignore` and are not required to run the project. The generator uses only
+synthetic data and does not read external or private inputs.
+
+No push or deployment is part of running any example. Public research
+citations are links, not redistributed copies of papers. The project does
+not claim legal compliance, production calibration, or externally valid
+pricing recommendations.
