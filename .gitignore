@@ -43,5 +43,4 @@
 **/*.pkl
 **/*.joblib
 
-# Only the newly generated public summary is eligible for publication.
-!/docs/design_implementation_summary.pdf
+
