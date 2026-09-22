@@ -14,19 +14,15 @@ supports decisions on both sides of an iBuyer marketplace:
   contribution profit, inventory risk, and price policy.
 
 Start with the [concise technical summary](docs/design_implementation_summary.pdf),
-then launch the app. The [complete PDF handbook](docs/design_implementation_report.pdf)
-retains the detailed design, theory, implementation, and worked examples.
+then launch the app or run the reproducible command-line studies.
 
 | Read | Purpose |
 |---|---|
 | [Concise technical summary](docs/design_implementation_summary.pdf) | Shareable overview of the two-sided valuation and causal decision system |
-| [Complete PDF handbook](docs/design_implementation_report.pdf) | Printable, navigable collection of the design, theory, implementation, results, and sources |
-| [Design and implementation guide](docs/design_implementation_guide.md) | Architecture, module map, execution walkthrough, rationale, and extension boundaries |
-| [Analysis report](docs/analysis_report.md) | Detailed theory and economic reasoning |
+| [Technical summary source](docs/design_implementation_summary.md) | Maintained Markdown source for the concise PDF |
 | [Generated reference results](docs/reference_results.md) | Actual numbers from the seeded Python pipeline |
 | [Source ledger](docs/sources.md) | Public sources, supported claims, and verification limits |
 | [Data dictionary](docs/data_dictionary.md) | Units, timestamps, labels, costs, and feature restrictions |
-| [Linked two-sided extension](docs/two_sided_extension.md) | End-to-end stage timing, selection-aware continuation learning, and sequential policy evaluation |
 | [Generated two-sided results](docs/two_sided_results.md) | Separate linked-cohort results, including uncertainty and unchanged recommendations |
 
 ## What the study does
@@ -61,8 +57,8 @@ this extension without replacing the original experiment.
 | `app/streamlit_app.py` | Interactive visual demo for acquisition and resale decisions |
 | `examples/` | Small executable walkthroughs of each modeling stage |
 | `tests/` | Leakage, causal identification, economics, policy, app, and report checks |
-| `docs/` | Public design, results, sources, figures, and PDF reports |
-| `scripts/build_pdf_report.py` | Reproducible report builder |
+| `docs/` | Technical summary, generated results, sources, data contracts, and figures |
+| `scripts/build_pdf_report.py` | Reproducible technical-summary PDF builder |
 
 ## Install on Windows
 
@@ -75,9 +71,9 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --no-deps -e .
 ```
 
-The lockfile records the tested Windows/Python 3.11 environment, including
-demo and development dependencies. For a fresh environment using the
-compatible version ranges instead, use:
+`requirements.txt` pins the tested Windows/Python 3.11 environment, including
+demo and development dependencies. To install from the compatible version
+ranges declared in `pyproject.toml` instead, use:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -e ".[demo,dev]"
@@ -97,34 +93,25 @@ in the main study and AVM fitting to avoid excessive CPU oversubscription.
 Open **http://127.0.0.1:8501**. The checked-in configuration binds the app to
 localhost and disables Streamlit usage telemetry. Stop it with `Ctrl+C`.
 
-## Read or rebuild the PDF reports
+## Read or rebuild the technical summary
 
 `docs\design_implementation_summary.pdf` is the concise, standalone overview;
 its maintained source is `docs\design_implementation_summary.md`.
 
-Open `docs\design_implementation_report.pdf`; no software installation is
-needed to read it. It includes equations, six synthetic result figures,
-bookmarks, a table of contents, and reference tables split into readable
-column panels.
-
-To rebuild it from the maintained public Markdown and figures:
+To rebuild the summary from the maintained Markdown and figures:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -e ".[report]"
-.\.venv\Scripts\python.exe scripts\build_pdf_report.py --date 2026-09-21
-
-# Build only the concise summary, leaving the full handbook unchanged.
 .\.venv\Scripts\python.exe scripts\build_pdf_report.py --summary --date 2026-09-21
 ```
 
-The optional report extra supplies Pandoc, Typst, and PyMuPDF. It is separate
-from the demo/development lockfile and is not needed for modeling or the app.
+The optional report extra supplies Pandoc, Typst, and PyMuPDF. It is not
+needed for modeling or the app.
 The builder runs locally without fetching web content, records source hashes
-and tool versions in `outputs\pdf_report\manifest.json`, and checks the PDF
+and tool versions in `outputs\pdf_summary\manifest.json`, and checks the PDF
 before replacing the published copy. Temporary build files remain ignored.
-The summary uses its own output file and `outputs\pdf_summary\manifest.json`.
 
-Rebuilding the PDF **does not rerun the simulation**. After changing a model,
+Rebuilding the summary **does not rerun the simulation**. After changing a model,
 first regenerate the affected study, reconcile the narrative's seed-42
 numbers, then rebuild. Omitting `--date` uses today's snapshot date; the date
 is not a claim that public sources were reverified that day.
@@ -168,7 +155,9 @@ Run the reference pipeline first; the scripts read its generated CSV files.
 ```
 
 These are readable Python entrypoints, not eight independent implementations.
-The shared package lives in `src\home_valuation`. Start with EDA, then
+They call the shared package in `src\home_valuation` or inspect the pipeline's
+generated tables; they do not maintain duplicate model logic or result files.
+Start with EDA, then
 valuation, homeowner decisions, causal response, instruments, optimization,
 then stress/offline policy evaluation and the new instrument/portfolio diagnostics.
 
@@ -192,9 +181,10 @@ values, chosen-action gains, and sequential DR policy comparisons.
 For a small run, use `--size 2400 --output outputs\two_sided_smoke`.
 Bootstrap/Monte Carlo flags apply only to the original `pipeline` command.
 
-The [extension chapter](docs/two_sided_extension.md) explains why randomized
-full-delivery actions need no new IV, how downstream policy rewards feed
-acquisition, and why a greater closing probability need not justify escalation.
+The [generated two-sided results](docs/two_sided_results.md) report the linked
+funnel, stage effects, downstream policy values, and final policy evaluation.
+The implementation is in `src\home_valuation\two_sided.py` and
+`src\home_valuation\two_sided_simulation.py`.
 
 ## Explore the interactive demo
 
