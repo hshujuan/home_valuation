@@ -1,9 +1,15 @@
 # Public source and claim ledger
 
 This report combines public-source research, standard statistical derivations,
-and independently written synthetic experiments. It does not reproduce private
-reference documents or import results from unexecuted example projects.
+and independently written synthetic experiments. Private source files are not
+distributed, and results from unexecuted external example projects are not
+presented as this lab's output.
 All results described as "our simulation" come from this repository.
+
+Verification statements below describe the original source review, not a new
+live verification whenever the code or reports are rebuilt. Public commercial
+terms and bibliographic revisions should be checked at their linked sources
+before relying on them operationally.
 
 ## Company context
 
@@ -11,7 +17,7 @@ All results described as "our simulation" come from this repository.
 |---|---|---|---|
 | S1 | [Opendoor: How does Opendoor determine my offer price?](https://help.opendoor.com/selling/understanding-your-offer/how-offer-price-determined) | Public description of comparable sales, market conditions, verified home condition, automated valuation, and human review | Internal architecture, coefficients, experiment design, model accuracy, or causal identification |
 | S2 | [Opendoor: What's included in my offer?](https://help.opendoor.com/selling/understanding-your-offer/whats-in-your-offer) | Distinct offer components, service charge, condition adjustment, closing costs, and net proceeds; the page says the service charge varies | A universal 5% fee, or the synthetic 2% retained-service assumption used here |
-| S3 | [Opendoor: What is the home assessment?](https://help.opendoor.com/selling/getting-your-offer/home-assessment) | A real operational self-assessment process using homeowner photos, and an in-person alternative; condition verification before a final offer | That an interviewer's ambiguous phrase necessarily meant self-assessment, or that self-report is an unbiased valuation |
+| S3 | [Opendoor: What is the home assessment?](https://help.opendoor.com/selling/getting-your-offer/home-assessment) | A real operational self-assessment process using homeowner photos, and an in-person alternative; condition verification before a final offer | That self-reported condition is independently verified or an unbiased valuation input |
 
 The substantive text of these three official pages was retrieved and read.
 Product details can change; consult the live pages rather than treating the
@@ -33,7 +39,7 @@ No paper's estimated coefficient is used as the simulator's price elasticity.
 
 | ID | Source | Use and verification scope |
 |---|---|---|
-| S7 | Chernozhukov et al., [Double/Debiased Machine Learning for Treatment and Causal Parameters](https://arxiv.org/abs/1608.00060) | Verified the original paper locator and title. Methodological reference for orthogonal scores and cross-fitting. Our implemented AIPW score and its assumptions are written explicitly in the analysis and checked in code; this is not a replication of the paper's empirical examples. |
+| S7 | Chernozhukov et al., [Double/Debiased Machine Learning for Treatment and Causal Parameters](https://arxiv.org/abs/1608.00060) | Verified the original paper locator and title. Methodological reference for orthogonal scores and cross-fitting. Our AIPW score and its assumptions are implemented in `src/home_valuation/causal.py` and checked in tests; this is not a replication of the paper's empirical examples. |
 | S8 | Dudik, Langford, and Li, [Doubly Robust Policy Evaluation and Learning](https://arxiv.org/abs/1103.4601) | Verified the original locator and title. Reference for combining outcome predictions with inverse-propensity residual correction. Our application is a held-out, finite-action randomized logging policy, with known probabilities. |
 | S9 | Angelopoulos and Bates, [A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification](https://arxiv.org/abs/2107.07511) | Verified the original locator and title. Background for split-conformal prediction and the importance of exchangeability; not evidence that nominal coverage survives our time shift. |
 | S10 | Goldsmith-Pinkham, Hull, and Kolesar, [Leniency Designs: An Operator's Manual](https://www.nber.org/papers/w34473), NBER Working Paper 34473; November 2025, PDF revised June 2026 | Read the original PDF abstract and opening discussion. Supports careful assignment, exclusion, monotonicity, and generated-instrument analysis. The paper discusses UJIVE; our small historical-score teaching fixture does **not** implement UJIVE. It also cautions against automatic clustering prescriptions: inference must follow the assignment and dependence structure. |
@@ -78,8 +84,10 @@ informally as "causal effects."
 | S15 | Jiang and Li, [Doubly Robust Off-policy Value Evaluation for Reinforcement Learning](https://proceedings.mlr.press/v48/jiang16.html), ICML 2016, PMLR 48:652-661 | Verified the proceedings citation and read its abstract for the extension. Methodological reference for extending DR evaluation to sequential decisions; the explicit two-stage equations here are independently derived and checked, not an empirical replication or a claim to have audited the full paper. |
 
 These additional sources were inspected for the 2026-09-21 extension/review.
-The supplied two-sided package is methodological input, not company evidence.
-Its reproduced quantities are clearly labeled review findings in
-[two_sided_extension.md](two_sided_extension.md); this project's own
-fitted results are generated separately in
-[two_sided_results.md](two_sided_results.md).
+The implemented experiment is described in the
+[technical summary](design_implementation_summary.md),
+[linked methods](two_sided_extension.md), and
+[data contracts](data_dictionary.md). This project's own fitted results are
+generated separately in [two_sided_results.md](two_sided_results.md).
+External methodological examples are not evidence of company policies or
+substitutes for those generated results.

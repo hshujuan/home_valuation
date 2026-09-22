@@ -154,6 +154,10 @@ def test_new_reports_do_not_overwrite_baseline_and_gains_reconcile(linked, tmp_p
     save_two_sided(linked, tmp_path)
     assert sentinel.read_text() == "preserve original study"
     assert (tmp_path / "two_sided_results.md").exists()
+    report = (tmp_path / "two_sided_results.md").read_text(encoding="utf-8")
+    assert "two_sided_extension.md" not in report
+    assert "docs/data_dictionary.md" in report
+    assert "docs/design_implementation_summary.md" in report
     decisions = linked.tables["buy_decisions"]
     assert np.allclose(
         decisions.predicted_incremental_value,

@@ -18,11 +18,15 @@ then launch the app or run the reproducible command-line studies.
 
 | Read | Purpose |
 |---|---|
+| [Repository design](docs/architecture.md) | Software architecture, component boundaries, data flow, artifacts, and extension rules |
+| [Interactive demo guide](docs/app_guide.md) | Section-by-section explanation of the Streamlit app, its controls, and its caveats |
 | [Concise technical summary](docs/design_implementation_summary.pdf) | Shareable overview of the two-sided valuation and causal decision system |
 | [Technical summary source](docs/design_implementation_summary.md) | Maintained Markdown source for the concise PDF |
+| [Modeling and economic analysis](docs/analysis_report.md) | Valuation, selection, causal estimators, IV diagnostics, and profit/policy equations |
 | [Generated reference results](docs/reference_results.md) | Actual numbers from the seeded Python pipeline |
 | [Source ledger](docs/sources.md) | Public sources, supported claims, and verification limits |
 | [Data dictionary](docs/data_dictionary.md) | Units, timestamps, labels, costs, and feature restrictions |
+| [Linked two-sided methods](docs/two_sided_extension.md) | Stage timing, conditional support, continuation rewards, and sequential policy evaluation |
 | [Generated two-sided results](docs/two_sided_results.md) | Separate linked-cohort results, including uncertainty and unchanged recommendations |
 
 ## What the study does
@@ -44,8 +48,9 @@ through selective escalation, completed acquisition, listing, markdown, and
 disposition. Three chronological cohorts separate response development,
 downstream-reward learning, and final evaluation. The seed-42 selective rule
 holds all acquisition offers; its policy interval does not establish a gain.
-That unfavorable result is retained, not tuned away. PDF Parts IX-X cover
-this extension without replacing the original experiment.
+That unfavorable result is retained, not tuned away. The technical summary
+and separate two-sided results cover this extension without replacing the
+original experiment.
 
 ![Synthetic price response and profit](docs/figures/response_and_profit.png)
 
@@ -59,6 +64,10 @@ this extension without replacing the original experiment.
 | `tests/` | Leakage, causal identification, economics, policy, app, and report checks |
 | `docs/` | Technical summary, generated results, sources, data contracts, and figures |
 | `scripts/build_pdf_report.py` | Reproducible technical-summary PDF builder |
+
+See the [repository design](docs/architecture.md) for the module dependency
+map, baseline and linked-study execution flows, persisted artifact contracts,
+reliability boundaries, and guidance for extending the system.
 
 ## Install on Windows
 
@@ -93,6 +102,9 @@ in the main study and AVM fitting to avoid excessive CPU oversubscription.
 Open **http://127.0.0.1:8501**. The checked-in configuration binds the app to
 localhost and disables Streamlit usage telemetry. Stop it with `Ctrl+C`.
 
+The [interactive demo guide](docs/app_guide.md) explains each of the eight
+sections, its controls, the tables it reads, and how to interpret it.
+
 ## Read or rebuild the technical summary
 
 `docs\design_implementation_summary.pdf` is the concise, standalone overview;
@@ -102,7 +114,7 @@ To rebuild the summary from the maintained Markdown and figures:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -e ".[report]"
-.\.venv\Scripts\python.exe scripts\build_pdf_report.py --summary --date 2026-09-21
+.\.venv\Scripts\python.exe scripts\build_pdf_report.py --date 2026-09-21
 ```
 
 The optional report extra supplies Pandoc, Typst, and PyMuPDF. It is not
@@ -117,6 +129,12 @@ numbers, then rebuild. Omitting `--date` uses today's snapshot date; the date
 is not a claim that public sources were reverified that day.
 
 ## Generate datasets and reproduce the report
+
+Datasets are generated on demand; CSVs are not checked into Git. The default
+directories are `outputs\reference` for the baseline and `outputs\two_sided`
+for the linked study. They do not exist in a fresh checkout until those
+commands have run. See the [data dictionary](docs/data_dictionary.md) for the
+CSV inventory and join rules.
 
 ```powershell
 # Quick run: same models, smaller data, no resampling loops.
@@ -183,6 +201,8 @@ Bootstrap/Monte Carlo flags apply only to the original `pipeline` command.
 
 The [generated two-sided results](docs/two_sided_results.md) report the linked
 funnel, stage effects, downstream policy values, and final policy evaluation.
+The [methods chapter](docs/two_sided_extension.md) derives the stage scores,
+selection-aware acquisition objective, and distinct evaluation denominators.
 The implementation is in `src\home_valuation\two_sided.py` and
 `src\home_valuation\two_sided_simulation.py`.
 

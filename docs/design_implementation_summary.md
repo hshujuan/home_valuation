@@ -32,8 +32,10 @@ and available capital.
 This summary presents the framework, its causal interpretation, and an
 implemented synthetic prototype. Public information motivates the context;
 numerical findings are synthetic, not estimates of Opendoor's actual response
-curves, internal policy, or operating performance. The complete implementation
-handbook remains available separately as `design_implementation_report.pdf`.
+curves, internal policy, or operating performance. Maintained field contracts,
+generated results, and source verification limits accompany this summary in
+`data_dictionary.md`, `reference_results.md`, `two_sided_results.md`, and
+`sources.md`.
 
 | Quantity | Meaning | Decision implication |
 |---|---|---|
@@ -203,7 +205,8 @@ selling and carrying costs. Acquisition basis is already sunk for incremental
 repricing comparisons, but must still be charged once when reporting lifecycle
 profit. A home unsold at the measurement horizon retains an asset value.
 
-The prototype uses a fixed day-45 terminal sale for clarity. A production
+The prototype uses a fixed terminal sale 45 days after the repricing decision
+for clarity. A production
 system would need a defensible continuation policy and richer timing/cancellation
 models. Repeated markdowns create a sequential decision problem: effects
 conditional on historical prices cannot simply be reused as if future
@@ -260,7 +263,7 @@ the initial-offer and initial-list mechanisms are fixed upstream inputs.
 | Acquisition escalation | Day 7 after the initial quote, for engaged nonacceptors; feasible increases of 0/1/2/3% |
 | Acquisition outcomes | Acceptance within 14 days and completed acquisition within 35 days of escalation |
 | Resale markdown | Listing day 21, conditional on acquisition, no early sale, and weak buyer signal; feasible cuts of 0/1/2/3% |
-| Resale outcomes | Completed resale over the next 30 days; otherwise terminal disposition at day 45 |
+| Resale outcomes | Completed resale over the next 30 days; otherwise terminal disposition 45 days after the markdown checkpoint |
 | Complete reward | Observed through offer day 150; company outlay, repairs, selling, and carrying accounted for once |
 
 Three chronological cohorts separate learning and evaluation:
@@ -376,10 +379,10 @@ the baseline experiment and the linked extension separate.
 | `two_sided_simulation.py`, `two_sided.py` | Linked trajectories, mature reward learning, action constraints, and sequential policy evaluation |
 | `pipeline.py`, CLI, examples, app | Reproducible artifacts and shared presentation, without a separate dashboard-only model |
 
-Reference artifacts are in `outputs\reference` and `outputs\two_sided`.
-The maintained design, contracts, sources, and generated results remain in
-`docs`. The summary does not replace the detailed handbook or reproduce
-all diagnostics.
+Running the studies creates reference artifacts in `outputs\reference` and
+`outputs\two_sided`; datasets are not included in a fresh checkout.
+The maintained summary, contracts, sources, and generated result snapshots
+remain in `docs`. This summary does not reproduce every diagnostic.
 
 ```powershell
 python -m home_valuation pipeline --seed 42 --output outputs\reference

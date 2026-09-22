@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 
 import numpy as np
 import plotly.express as px
@@ -12,13 +11,351 @@ from home_valuation.two_sided import run_two_sided
 from home_valuation.two_sided_simulation import TwoSidedConfig
 from home_valuation.visualization import profit_figure, response_figure
 
-st.set_page_config(page_title="Home valuation and causal pricing lab", layout="wide")
-st.title("Two-sided home valuation and causal pricing lab")
-st.caption(
-    "Synthetic visual demo: valuation uncertainty, homeowner offer response, "
-    "buyer repricing response, and lifecycle profit decisions."
+st.set_page_config(
+    page_title="Home valuation and causal pricing lab",
+    page_icon="⌂",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+COLORS = {
+    "ink": "#17352f",
+    "teal": "#147d70",
+    "mint": "#83b9a9",
+    "sand": "#e4a85f",
+    "coral": "#d76f51",
+    "blue": "#547d9b",
+}
+px.defaults.template = "plotly_white"
+px.defaults.color_discrete_sequence = [
+    COLORS["teal"], COLORS["sand"], COLORS["blue"], COLORS["coral"], COLORS["mint"]
+]
+
+st.markdown(
+    """
+    <style>
+    :root {
+        --ink: #17352f;
+        --muted: #63736e;
+        --teal: #147d70;
+        --teal-dark: #0d5f56;
+        --mint: #dcece6;
+        --cream: #f8f5ee;
+        --sand: #e4a85f;
+        --border: #dbe3df;
+        --white: #ffffff;
+        --shadow: 0 12px 32px rgba(23, 53, 47, 0.08);
+    }
+
+    html, body, [class*="css"] {
+        font-family: "Aptos", "Segoe UI", sans-serif;
+        color: var(--ink);
+    }
+
+    .stApp {
+        background:
+            radial-gradient(circle at 88% 3%, rgba(228, 168, 95, 0.13), transparent 24rem),
+            linear-gradient(180deg, #fbfaf7 0%, #f6f8f6 34rem, #f8faf9 100%);
+    }
+
+    [data-testid="stHeader"] {
+        background: rgba(251, 250, 247, 0.82);
+        backdrop-filter: blur(12px);
+    }
+
+    [data-testid="stAppViewContainer"] > .main .block-container {
+        max-width: 1440px;
+        padding-top: 2.2rem;
+        padding-bottom: 4rem;
+    }
+
+    h1, h2, h3 {
+        font-family: "Aptos Display", "Segoe UI", sans-serif;
+        color: var(--ink);
+        letter-spacing: -0.035em;
+    }
+
+    h2 {
+        margin-top: 1.2rem;
+        padding-bottom: 0.45rem;
+        border-bottom: 1px solid rgba(23, 53, 47, 0.09);
+    }
+
+    p, label, [data-testid="stCaptionContainer"] {
+        color: var(--muted);
+    }
+
+    .hero {
+        position: relative;
+        overflow: hidden;
+        min-height: 280px;
+        margin-bottom: 1.8rem;
+        padding: 3.1rem 3.3rem;
+        border: 1px solid rgba(20, 125, 112, 0.14);
+        border-radius: 28px;
+        background:
+            linear-gradient(112deg, rgba(10, 80, 72, 0.98), rgba(20, 125, 112, 0.91)),
+            #147d70;
+        box-shadow: 0 22px 55px rgba(18, 91, 82, 0.2);
+    }
+
+    .hero::before {
+        content: "";
+        position: absolute;
+        width: 380px;
+        height: 380px;
+        right: -85px;
+        top: -145px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 48% 52% 58% 42%;
+        transform: rotate(18deg);
+    }
+
+    .hero::after {
+        content: "⌂";
+        position: absolute;
+        right: 4.5rem;
+        bottom: 1.1rem;
+        color: rgba(255, 255, 255, 0.08);
+        font-size: 12rem;
+        line-height: 1;
+    }
+
+    .hero-kicker {
+        position: relative;
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.38rem 0.72rem;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 999px;
+        color: #e8f4f0;
+        background: rgba(255, 255, 255, 0.09);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+    }
+
+    .hero h1 {
+        position: relative;
+        z-index: 1;
+        max-width: 820px;
+        margin: 1.25rem 0 0.85rem;
+        color: white;
+        font-size: clamp(2.35rem, 4vw, 4.25rem);
+        line-height: 1.02;
+        letter-spacing: -0.055em;
+    }
+
+    .hero p {
+        position: relative;
+        z-index: 1;
+        max-width: 760px;
+        margin: 0;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 1.06rem;
+        line-height: 1.65;
+    }
+
+    .hero-tags {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin-top: 1.45rem;
+    }
+
+    .hero-tag {
+        padding: 0.45rem 0.78rem;
+        border-radius: 9px;
+        color: #f7fbfa;
+        background: rgba(255, 255, 255, 0.1);
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    [data-testid="stSidebar"] {
+        border-right: 1px solid #dce4e0;
+        background: linear-gradient(180deg, #f1f7f4 0%, #f8f6ef 100%);
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+        padding-top: 1.5rem;
+    }
+
+    .sidebar-brand {
+        margin: 0.2rem 0 1.3rem;
+        padding: 1rem 1rem 1.05rem;
+        border-radius: 16px;
+        color: white;
+        background: var(--ink);
+        box-shadow: var(--shadow);
+    }
+
+    .sidebar-brand strong {
+        display: block;
+        font-family: "Aptos Display", "Segoe UI", sans-serif;
+        font-size: 1rem;
+        letter-spacing: -0.02em;
+    }
+
+    .sidebar-brand span {
+        display: block;
+        margin-top: 0.2rem;
+        color: #a9c9c0;
+        font-size: 0.76rem;
+    }
+
+    [data-testid="stSidebar"] [role="radiogroup"] label {
+        margin-bottom: 0.22rem;
+        padding: 0.5rem 0.65rem;
+        border-radius: 9px;
+        transition: background 140ms ease;
+    }
+
+    [data-testid="stSidebar"] [role="radiogroup"] label:hover {
+        background: rgba(20, 125, 112, 0.08);
+    }
+
+    [data-testid="stMetric"] {
+        min-height: 118px;
+        padding: 1.15rem 1.25rem;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.84);
+        box-shadow: var(--shadow);
+    }
+
+    [data-testid="stMetricLabel"] {
+        font-weight: 600;
+    }
+
+    [data-testid="stMetricValue"] {
+        font-family: "Aptos Display", "Segoe UI", sans-serif;
+        color: var(--teal-dark);
+        letter-spacing: -0.04em;
+    }
+
+    [data-testid="stPlotlyChart"],
+    [data-testid="stDataFrame"],
+    [data-testid="stJson"] {
+        overflow: hidden;
+        padding: 0.65rem;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 7px 22px rgba(23, 53, 47, 0.055);
+    }
+
+    [data-testid="stAlert"] {
+        border-radius: 14px;
+        border-width: 1px;
+        box-shadow: 0 6px 18px rgba(23, 53, 47, 0.04);
+    }
+
+    [data-testid="stExpander"] {
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.7);
+    }
+
+    .stButton > button,
+    .stDownloadButton > button {
+        min-height: 2.75rem;
+        border: 1px solid var(--teal);
+        border-radius: 10px;
+        color: white;
+        background: var(--teal);
+        font-weight: 700;
+        box-shadow: 0 7px 16px rgba(20, 125, 112, 0.15);
+        transition: transform 140ms ease, box-shadow 140ms ease;
+    }
+
+    .stButton > button:hover,
+    .stDownloadButton > button:hover {
+        border-color: var(--teal-dark);
+        color: white;
+        background: var(--teal-dark);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 21px rgba(20, 125, 112, 0.22);
+    }
+
+    .stSelectbox [data-baseweb="select"] > div,
+    .stNumberInput [data-baseweb="input"] > div,
+    .stTextInput [data-baseweb="input"] > div {
+        border-color: var(--border);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.8);
+    }
+
+    [data-testid="stSlider"] [role="slider"] {
+        background: var(--teal);
+    }
+
+    code {
+        border-radius: 6px;
+        color: var(--teal-dark);
+        background: var(--mint);
+    }
+
+    @media (max-width: 800px) {
+        [data-testid="stAppViewContainer"] > .main .block-container {
+            padding-top: 1rem;
+        }
+
+        .hero {
+            min-height: auto;
+            padding: 2rem 1.5rem;
+            border-radius: 20px;
+        }
+
+        .hero h1 {
+            font-size: 2.4rem;
+        }
+
+        .hero::after {
+            display: none;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    """
+    <section class="hero">
+      <div class="hero-kicker">Synthetic decision lab</div>
+      <h1>Price homes with more confidence.</h1>
+      <p>
+        Explore how valuation uncertainty, homeowner response, causal repricing,
+        and lifecycle economics work together across an iBuyer marketplace.
+      </p>
+      <div class="hero-tags">
+        <span class="hero-tag">Valuation</span>
+        <span class="hero-tag">Causal inference</span>
+        <span class="hero-tag">Profit optimization</span>
+        <span class="hero-tag">Two-sided policy</span>
+      </div>
+    </section>
+    """,
+    unsafe_allow_html=True,
 )
 st.caption("Synthetic educational data. Not Opendoor's model, data, or pricing advice.")
+
+st.sidebar.markdown(
+    """
+    <div class="sidebar-brand">
+      <strong>Home value lab</strong>
+      <span>Interactive pricing workspace</span>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 @st.cache_resource(show_spinner="Generating and fitting the reproducible synthetic study...")
@@ -115,7 +452,9 @@ elif section == "Instrumental variables":
     st.subheader("5. Instrument design before estimator choice")
     scenario = st.selectbox("IV scenario", tables["iv_results"].scenario.tolist())
     row = tables["iv_results"].loc[tables["iv_results"].scenario.eq(scenario)]
-    st.dataframe(row.T.rename(columns={row.index[0]: "value"}), width="stretch")
+    # Transposing mixes estimates, flags, and notes in one column; cast for Arrow display.
+    st.dataframe(row.T.rename(columns={row.index[0]: "value"}).astype("string"),
+                 width="stretch")
     st.warning("First-stage strength does not prove exclusion. IV estimates are local/design-specific, "
                "not a global price-response curve.")
     if scenario == "weak":
@@ -258,16 +597,13 @@ else:
         "python -m pytest", language="powershell")
     st.info("The app uses the selected sample size with no bootstrap/Monte Carlo loop. "
             "The reference CLI run records its own configuration and uncertainty artifacts.")
-    report = Path(__file__).resolve().parents[1] / "docs" / "analysis_report.md"
-    if report.exists():
-        with st.expander("Read the analysis report"):
-            text = report.read_text(encoding="utf-8")
-            st.download_button("Download analysis Markdown", text, "analysis_report.md", "text/markdown")
-            chunks = re.split(r"!\[([^\]]*)\]\((figures/[^)]+)\)", text)
-            for index in range(0, len(chunks), 3):
-                st.markdown(chunks[index])
-                if index + 2 < len(chunks):
-                    st.image(str(report.parent / chunks[index + 2]), caption=chunks[index + 1])
+    summary = Path(__file__).resolve().parents[1] / "docs" / "design_implementation_summary.md"
+    if summary.exists():
+        with st.expander("Read the technical summary"):
+            text = summary.read_text(encoding="utf-8")
+            st.download_button("Download summary Markdown", text,
+                               "design_implementation_summary.md", "text/markdown")
+            st.markdown(text)
             st.caption("Relative documentation links are intended for the files on disk or GitHub.")
     else:
-        st.warning("The analysis report is not present at docs\\analysis_report.md.")
+        st.warning("The technical summary is not present at docs\\design_implementation_summary.md.")

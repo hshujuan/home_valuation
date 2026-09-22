@@ -27,6 +27,9 @@
 /.mypy_cache/
 /outputs/
 /docs/private/
+# Keep transcriptions of the local reference PDF out of public report sources.
+/docs/Instrumental_Variables_for_Pricing.md
+/docs/Instrumental_Variables_for_Pricing_assets/
 **/__pycache__/
 **/*.py[cod]
 **/*.egg-info/
@@ -42,6 +45,5 @@
 **/*.pkl
 **/*.joblib
 
-# Only these newly generated public reports are eligible for publication.
-!/docs/design_implementation_report.pdf
+# Only the newly generated public summary is eligible for publication.
 !/docs/design_implementation_summary.pdf

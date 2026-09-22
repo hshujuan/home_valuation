@@ -72,4 +72,4 @@ Only past cohorts supply model parameters. Oracle probabilities are used for the
 
 ![Linked stages and held-out policy comparisons](figures/two_sided_extension.png)
 
-See [the extension chapter](two_sided_extension.md) for timing, equations, support, accounting, and inference assumptions.
+See the repository's `docs/data_dictionary.md` and `docs/design_implementation_summary.md` for timing, support, accounting, and inference assumptions. Stage-score and continuation-reward equations are implemented in `src/home_valuation/two_sided.py`.

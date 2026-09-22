@@ -15,6 +15,20 @@ not a longitudinal simulation of the exact same acquired homes.
 The later `two-sided` command does link the exact same prospects to inventory,
 in a different output directory and experiment.
 
+The CSVs are generated on demand and ignored by Git, not bundled under `docs`
+or a `data` directory. From the repository root, generate the default datasets:
+
+```powershell
+.\.venv\Scripts\python.exe -m home_valuation pipeline --output outputs\reference
+.\.venv\Scripts\python.exe -m home_valuation two-sided --output outputs\two_sided
+```
+
+Each command also writes `metadata.json`, `manifest.json`, its generated
+Markdown report, figures, and a separate `evaluator_truth` directory.
+`--write-report` additionally refreshes the public result snapshots in `docs`;
+it is not required to create datasets. The app instead generates its tables
+in memory and does not create these CSV directories.
+
 | Table | Row and purpose |
 |---|---|
 | `market_sales.csv` | One historical completed market transaction, used for AVM development |
@@ -251,6 +265,9 @@ gain, not a lower confidence bound. Policy intervals are pointwise and
 conditional on models fitted entirely before cohort C; no extension bootstrap
 or joint uncertainty propagation is claimed.
 
-See the [extension chapter](two_sided_extension.md) for the exact equations,
-cohort dates, support restrictions, and limitations, and
-[its results](two_sided_results.md) for the distinct seed-42 tables.
+See the [technical summary](design_implementation_summary.md#6-connect-the-stages-through-downstream-value)
+for the linked decision architecture and learning/evaluation split,
+[the methods chapter](two_sided_extension.md) for the policy-score derivation, and
+[the linked results](two_sided_results.md) for cohort dates and the distinct
+seed-42 tables. The executable stage-score and continuation-reward equations
+are in `src\home_valuation\two_sided.py`.
