@@ -37,6 +37,9 @@
 **/~$*
 **/*.docx
 **/*.pdf
+# Published documentation PDFs are tracked despite the blanket rule above.
+!/docs/design_implementation_summary.pdf
+!/docs/Instrumental_Variables_for_Pricing.pdf
 **/*.ipynb
 **/.env
 **/.env.*

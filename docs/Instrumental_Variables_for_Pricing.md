@@ -9,8 +9,8 @@ technical sections, tables, examples, references, and seven embedded figures.
 Personal anecdotes and nontechnical framing are omitted. Paragraph and table
 wrapping is restored; printed page numbers and table-of-contents leaders are
 omitted. Equations are typeset in Markdown. The original PDF is unchanged.
-This local reference and its extracted figures remain ignored by
-Git, like the source PDF; they are not inputs to the public report builder.
+This companion, its extracted figures, and the source PDF are tracked in this
+repository; they are not inputs to the public report builder.
 
 Source PDF SHA-256:
 `ac8d58e48fad5ccba75231404a7cb5d00198a6aae257278c2b60c088d5112dd2`.
