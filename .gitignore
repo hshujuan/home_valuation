@@ -28,8 +28,6 @@
 /outputs/
 /docs/private/
 # Keep transcriptions of the local reference PDF out of public report sources.
-/docs/Instrumental_Variables_for_Pricing.md
-/docs/Instrumental_Variables_for_Pricing_assets/
 **/__pycache__/
 **/*.py[cod]
 **/*.egg-info/
